@@ -1,22 +1,22 @@
 // Outgoing
 
 export interface EchoRequest {
-    message: string;
+	message: string;
 }
 
 export interface SubmitPunRequest {
-    pun: string;
+	pun: string;
 }
 
 // Response
 
 export interface EchoResponse {
-    requestNumber: number;
-    message: string;
+	requestNumber: number;
+	message: string;
 }
 
 // Event
 
 export interface NewPunEvent {
-    pun: string;
+	pun: string;
 }
