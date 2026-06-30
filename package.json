@@ -1,0 +1,31 @@
+{
+  "name": "@liphium/neoroute-ts-client",
+  "version": "0.1.0",
+  "description": "Universal TypeScript client for neoroute",
+  "keywords": [],
+  "author": "liphium",
+  "license": "MIT",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsup",
+    "dev": "tsup --watch"
+  },
+  "type": "commonjs",
+  "devDependencies": {
+    "@types/node": "^26.0.1",
+    "tsup": "^8.5.1",
+    "typescript": "^6.0.3"
+  },
+  "dependencies": {
+    "@msgpack/msgpack": "^3.1.3"
+  }
+}
