@@ -1,6 +1,6 @@
 // Incoming messages
 
-enum MessageType {
+export enum MessageType {
 	Response,
 	Event,
 }

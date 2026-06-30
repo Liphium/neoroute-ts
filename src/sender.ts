@@ -1,11 +1,10 @@
 import { decode, encode } from '@msgpack/msgpack';
 import {
-	MessageTypeEvent,
-	MessageTypeResponse,
 	type Message,
 	type Response,
 	type Event,
 	type Request,
+	MessageType,
 } from './interfaces.js';
 import { logger } from './logger.js';
 import { Ctx } from './client.js';
@@ -65,10 +64,10 @@ export class DefaultSender implements Sender {
 		}
 
 		switch (message.type) {
-			case MessageTypeEvent:
+			case MessageType.Event:
 				this.handleEvent(message.data);
 				break;
-			case MessageTypeResponse:
+			case MessageType.Response:
 				this.handleResponse(message.data);
 				break;
 			default:
