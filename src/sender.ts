@@ -6,7 +6,7 @@ import {
 	type Response,
 	type Event,
 	type Request,
-} from './neoroute_structs.js';
+} from './interfaces.js';
 import { logger } from './logger.js';
 import { Ctx } from './client.js';
 import type { Config } from './config.js';

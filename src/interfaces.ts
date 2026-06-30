@@ -1,10 +1,12 @@
 // Incoming messages
 
-export const MessageTypeResponse = 0;
-export const MessageTypeEvent = 1;
+enum MessageType {
+	Response,
+	Event,
+}
 
 export interface Message {
-	type: number; // Response or event
+	type: MessageType; // Response or event
 	data: Uint8Array;
 }
 

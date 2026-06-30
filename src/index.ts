@@ -1,4 +1,4 @@
-export * from './neoroute_structs.js';
+export * from './interfaces.js';
 export * from './config.js';
 export * from './logger.js';
 export * from './client.js';
