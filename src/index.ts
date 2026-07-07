@@ -5,9 +5,8 @@ export * from './client.js';
 
 export * from './sender.js';
 export * from './receiver.js';
-export * from './send.js';
 export * from './receive.js';
-export * from './send_helper.js';
+export * from './util.js';
 
 export * from './user_error.js';
 

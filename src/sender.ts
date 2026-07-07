@@ -2,41 +2,25 @@ import { decode, encode } from '@msgpack/msgpack';
 import {
 	type Message,
 	type Response,
-	type Event,
 	type Request,
 	MessageType,
 } from './interfaces.js';
 import { logger } from './logger.js';
-import { Ctx } from './client.js';
 import type { Config } from './config.js';
+import {
+	marshalRequestData,
+	unmarshalResponseData,
+	withTimeout,
+} from './util.js';
+import { UserError } from './user_error.js';
 
-export interface Sender {
-	getRequestId(): number;
-	setSendFunc(sendFunc: (data: Uint8Array) => Promise<void>): void;
-	handle(reqData: Uint8Array): void;
-	handleResponse(respBytes: Uint8Array): void;
-	handleEvent(eventBytes: Uint8Array): void;
-	removeResponseWaiter(requestId: number): void;
-	sendRequest(
-		route: string,
-		reqData: Uint8Array,
-		wantResponse: boolean,
-	): Promise<{ promise: Promise<Response>; reqId: number }>;
-	getConfig(): Config;
-	setReceiver(
-		eventName: string,
-		receiveFunc: (c: Ctx) => Promise<void>,
-	): void;
-}
-
-export class DefaultSender implements Sender {
+export class Sender {
 	private config: Config;
 	private sendFunc?: (data: Uint8Array) => Promise<void>;
 	private requestId: number = 0;
 
 	// Maps a request ID to a resolve function to fulfill the promise
 	private waiters: Map<number, (resp: Response) => void> = new Map();
-	private receiver: Map<string, (c: Ctx) => void> = new Map();
 
 	constructor(config: Config) {
 		this.config = config;
@@ -63,16 +47,10 @@ export class DefaultSender implements Sender {
 			return;
 		}
 
-		switch (message.type) {
-			case MessageType.Event:
-				this.handleEvent(message.data);
-				break;
-			case MessageType.Response:
-				this.handleResponse(message.data);
-				break;
-			default:
-				logger.info('received unsupported message type', message.type);
-				return;
+		if (message.type === MessageType.Response) {
+			this.handleResponse(message.data);
+		} else {
+			this.handleOther(message);
 		}
 	}
 
@@ -100,30 +78,15 @@ export class DefaultSender implements Sender {
 		resolveFunc(resp);
 	}
 
-	public handleEvent(eventBytes: Uint8Array): void {
-		let ev: Event;
-		try {
-			ev = decode(eventBytes) as Event;
-		} catch (error) {
-			logger.info('failed to unmarshal event', error);
-			return;
-		}
-
-		const receiverFunc = this.receiver.get(ev.name);
-		if (!receiverFunc) {
-			logger.info('received event for non existing receiver', ev.name);
-			return;
-		}
-
-		const c = new Ctx(ev.data, ev.name);
-		receiverFunc(c);
+	protected handleOther(message: Message): void {
+		logger.info('received unsupported message type', message.type);
 	}
 
 	public removeResponseWaiter(requestId: number): void {
 		this.waiters.delete(requestId);
 	}
 
-	public async sendRequest(
+	private async sendRequest(
 		route: string,
 		reqData: Uint8Array,
 		wantResponse: boolean,
@@ -162,7 +125,67 @@ export class DefaultSender implements Sender {
 		return this.config;
 	}
 
-	public setReceiver(eventName: string, receiveFunc: (c: Ctx) => void): void {
-		this.receiver.set(eventName, receiveFunc);
+	/// Internal helper for making send functions easier to write.
+	private async sendInternal<RQ, RS>(
+		route: string,
+		req?: RQ,
+		waitForResponse?: boolean,
+	): Promise<RS | UserError | undefined> {
+		const { promise: respPromise, reqId } = await this.sendRequest(
+			route,
+			req != undefined ? marshalRequestData<RQ>(req) : new Uint8Array(),
+			true,
+		);
+
+		// When we want to wait for response, properly serialize it
+		if (waitForResponse) {
+			const timeout = this.config.requestTimeout ?? 5000;
+			const res = await withTimeout(respPromise, timeout);
+			this.removeResponseWaiter(reqId);
+
+			if (res.error) {
+				const decoder = new TextDecoder();
+				return new UserError(decoder.decode(res.data));
+			}
+
+			return unmarshalResponseData<RS>(res.data);
+		} else {
+			// Otherwise signal that nothing will be waited for
+			return undefined;
+		}
+	}
+
+	public send<RS, RQ>(route: string, req: RQ): Promise<RS | UserError> {
+		return this.sendInternal<RQ, RS>(route, req, true) as Promise<
+			RS | UserError
+		>;
+	}
+
+	public sendOk<RQ>(route: string, req: RQ): Promise<UserError> {
+		return this.sendInternal<RQ, unknown>(
+			route,
+			req,
+			true,
+		) as Promise<UserError>;
+	}
+
+	public async sendOkNoRequest(route: string): Promise<UserError> {
+		return this.sendInternal(route, undefined, false) as Promise<UserError>;
+	}
+
+	public async sendNoRequest<RS>(route: string): Promise<RS | UserError> {
+		return this.sendInternal<undefined, RS>(
+			route,
+			undefined,
+			true,
+		) as Promise<RS | UserError>;
+	}
+
+	public async sendNoResponse<RQ>(route: string, req: RQ): Promise<void> {
+		await this.sendInternal<RQ, undefined>(route, req, false);
+	}
+
+	public async sendPing(route: string): Promise<void> {
+		await this.sendInternal(route, undefined, false);
 	}
 }

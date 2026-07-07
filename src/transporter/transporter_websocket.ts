@@ -7,9 +7,6 @@ export interface WebSocketOptions {
 
 	// When the connection actually opens.
 	onOpen?: () => void;
-
-	// When an error happened, basically whenever we get disconnected. Error is also the reason why we were disconnected / an error from the listener.
-	onError?: (error: string) => void;
 }
 
 export class WebSocketTransporter {
@@ -107,8 +104,8 @@ export class WebSocketTransporter {
 			this.conn = null;
 			c.close(1000, reason);
 		}
-		if (wasConnected && this.options.onError) {
-			this.options.onError(reason);
+		if (wasConnected) {
+			this.receiver.getConfig().errorHandler(new Error(reason));
 		}
 	}
 

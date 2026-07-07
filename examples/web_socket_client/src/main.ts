@@ -1,4 +1,3 @@
-/// <reference types="node" />
 import { Receiver, WebSocketTransporter } from '@liphium/neoroute-ts';
 import { registerReceiver } from './receiver.js';
 import * as readline from 'node:readline';
