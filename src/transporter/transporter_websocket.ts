@@ -24,7 +24,7 @@ export class WebSocketTransporter {
 	/// Will start a connection to the server. Will not block until the connection is open.
 	///
 	/// All things sent before the connection is open are queued, so feel free to send already after calling connect.
-	public async connect(url: string) {
+	public connect(url: string) {
 		if (this.connected || this.conn) {
 			return;
 		}

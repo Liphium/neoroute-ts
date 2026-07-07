@@ -1,22 +1,33 @@
-import { Receiver, WebSocketTransporter } from '@liphium/neoroute-ts';
+import {
+	newPromiseWithResolver,
+	Receiver,
+	WebSocketTransporter,
+} from '@liphium/neoroute-ts';
 import { registerReceiver } from './receiver.js';
 import * as readline from 'node:readline';
 import { sendEchoRequest, sendSubmitPunRequest } from './requests.js';
 
 async function main() {
+	const { resolve, reject, promise } = newPromiseWithResolver<void>();
 	const r = new Receiver({
 		errorHandler: (err: Error) => {
 			console.log('error with receiver', err);
+			reject(err);
 		},
 		requestTimeout: 1000, // time.Second * 1 in Millisekunden
 	});
 
 	registerReceiver(r);
 
-	const t = new WebSocketTransporter(r);
+	const t = new WebSocketTransporter(r, {
+		onOpen: () => {
+			resolve();
+		},
+	});
 
 	try {
-		await t.connect('ws://localhost:6121/');
+		t.connect('ws://localhost:6121/');
+		await promise;
 		console.log('Connected to server.');
 	} catch (err) {
 		console.error(`failed to connect to server: ${err}`);

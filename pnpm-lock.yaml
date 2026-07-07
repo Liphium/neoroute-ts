@@ -30,6 +30,10 @@ importers:
       '@liphium/neoroute-ts':
         specifier: workspace:*
         version: link:../..
+    devDependencies:
+      '@types/node':
+        specifier: ^26.0.1
+        version: 26.0.1
 
   examples/web_socket_client:
     dependencies:

@@ -128,8 +128,9 @@ export class Sender {
 	/// Internal helper for making send functions easier to write.
 	private async sendInternal<RQ, RS>(
 		route: string,
-		req?: RQ,
-		waitForResponse?: boolean,
+		req: RQ,
+		waitForResponse: boolean,
+		hasResponse: boolean,
 	): Promise<RS | UserError | undefined> {
 		const { promise: respPromise, reqId } = await this.sendRequest(
 			route,
@@ -148,7 +149,11 @@ export class Sender {
 				return new UserError(decoder.decode(res.data));
 			}
 
-			return unmarshalResponseData<RS>(res.data);
+			if (hasResponse) {
+				return unmarshalResponseData<RS>(res.data);
+			} else {
+				return undefined;
+			}
 		} else {
 			// Otherwise signal that nothing will be waited for
 			return undefined;
@@ -156,7 +161,7 @@ export class Sender {
 	}
 
 	public send<RS, RQ>(route: string, req: RQ): Promise<RS | UserError> {
-		return this.sendInternal<RQ, RS>(route, req, true) as Promise<
+		return this.sendInternal<RQ, RS>(route, req, true, true) as Promise<
 			RS | UserError
 		>;
 	}
@@ -166,11 +171,17 @@ export class Sender {
 			route,
 			req,
 			true,
+			false,
 		) as Promise<UserError>;
 	}
 
 	public async sendOkNoRequest(route: string): Promise<UserError> {
-		return this.sendInternal(route, undefined, false) as Promise<UserError>;
+		return this.sendInternal(
+			route,
+			undefined,
+			false,
+			false,
+		) as Promise<UserError>;
 	}
 
 	public async sendNoRequest<RS>(route: string): Promise<RS | UserError> {
@@ -178,14 +189,15 @@ export class Sender {
 			route,
 			undefined,
 			true,
+			true,
 		) as Promise<RS | UserError>;
 	}
 
 	public async sendNoResponse<RQ>(route: string, req: RQ): Promise<void> {
-		await this.sendInternal<RQ, undefined>(route, req, false);
+		await this.sendInternal<RQ, undefined>(route, req, false, false);
 	}
 
 	public async sendPing(route: string): Promise<void> {
-		await this.sendInternal(route, undefined, false);
+		await this.sendInternal(route, undefined, false, false);
 	}
 }

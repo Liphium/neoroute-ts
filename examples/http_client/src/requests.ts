@@ -1,10 +1,10 @@
-import { Receiver, send, sendNoRequest, UserError } from '@liphium/neoroute-ts';
+import { Receiver, UserError } from '@liphium/neoroute-ts';
 import { type TestRequest, type TestResponse } from './messages.js';
 
-export async function testHttpSimple(r: Receiver): Promise<void> {
+export async function testHttpSimple(receiver: Receiver): Promise<void> {
 	try {
 		console.log('Sending simple HTTP request...');
-		const resp = await sendNoRequest<TestResponse>(r, 'simple.route');
+		const resp = receiver.sendNoRequest<TestResponse>('simple.route');
 		console.log('Simple HTTP Response:', resp);
 	} catch (err) {
 		if (err instanceof UserError) {
@@ -16,7 +16,7 @@ export async function testHttpSimple(r: Receiver): Promise<void> {
 }
 
 export async function testHttpGroup1(
-	r: Receiver,
+	receiver: Receiver,
 	numberValue: number,
 ): Promise<void> {
 	try {
@@ -25,8 +25,7 @@ export async function testHttpGroup1(
 			field1: 'Testing Group 1',
 			field2: numberValue,
 		};
-		const resp = await send<TestResponse, TestRequest>(
-			r,
+		const resp = receiver.send<TestResponse, TestRequest>(
 			'group1.route1',
 			req,
 		);
@@ -41,7 +40,7 @@ export async function testHttpGroup1(
 }
 
 export async function testHttpGroup2(
-	r: Receiver,
+	receiver: Receiver,
 	numberValue: number,
 ): Promise<void> {
 	try {
@@ -50,8 +49,7 @@ export async function testHttpGroup2(
 			field1: 'Testing Group 2',
 			field2: numberValue,
 		};
-		const resp = await send<TestResponse, TestRequest>(
-			r,
+		const resp = await receiver.send<TestResponse, TestRequest>(
 			'group1.group2.route1',
 			req,
 		);
