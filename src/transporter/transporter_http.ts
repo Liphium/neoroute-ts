@@ -20,21 +20,15 @@ export class HTTPTransporter {
 					},
 				});
 
-				const arrayBuffer = await response.arrayBuffer();
-				const bodyBytes = new Uint8Array(arrayBuffer);
-
 				// Check for transporter errors
 				if (!response.ok) {
-					const decoder = new TextDecoder();
 					throw new Error(
-						`received non ok status ${response.status} ${response.statusText}: ${decoder.decode(bodyBytes)}`,
+						`received non ok status ${response.status} ${response.statusText}`,
 					);
 				}
 
 				// Let sender handle the response routing
-				setTimeout(() => {
-					this.sender.handle(bodyBytes);
-				}, 0);
+				this.sender.handle(await response.bytes());
 			} finally {
 				clearTimeout(timeout);
 			}
