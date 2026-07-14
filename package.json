@@ -13,7 +13,7 @@
 	"exports": {
 		".": "./src/index.ts"
 	},
-	"description": "Talk to neoroute servers.",
+	"description": "Connect to Neoroute servers using WebSocket or HTTP.",
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
@@ -23,7 +23,7 @@
 	},
 	"keywords": [],
 	"author": "",
-	"license": "ISC",
+	"license": "LGPL-3.0-only",
 	"packageManager": "pnpm@11.10.0",
 	"devDependencies": {
 		"@types/node": "^26.0.1",
