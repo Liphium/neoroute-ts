@@ -1,0 +1,11 @@
+{
+	"bump-minor-pre-major": true,
+	"tag-separator": "/",
+	"packages": {
+		".": {
+			"release-type": "node",
+			"include-v-in-tag": false,
+			"exclude-paths": ["examples", "dist", "node_modules"]
+		}
+	}
+}
