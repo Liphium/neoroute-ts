@@ -2,6 +2,14 @@
 	"name": "@liphium/neoroute-ts",
 	"version": "0.1.0",
 	"type": "module",
+	"repository": {
+		"type": "git",
+		"directory": "https://github.com/Liphium/neoroute-ts.git"
+	},
+	"homepage": "https://github.com/Liphium/neoroute-ts#readme",
+	"bugs": {
+		"url": "https://github.com/Liphium/neoroute-ts/issues"
+	},
 	"exports": {
 		".": "./src/index.ts"
 	},
