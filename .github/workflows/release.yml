@@ -37,8 +37,8 @@ jobs:
                   cache: pnpm
               if: ${{ steps.release.outputs.release_created }}
 
-            - run: npm ci
+            - run: pnpm ci
               if: ${{ steps.release.outputs.release_created }}
 
-            - run: npm publish
+            - run: pnpm publish
               if: ${{ steps.release.outputs.release_created }}
