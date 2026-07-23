@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.1](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.0...neoroute-ts/0.2.1) (2026-07-23)
+
+
+### Bug Fixes
+
+* Export proper files ([f8ce8e0](https://github.com/Liphium/neoroute-ts/commit/f8ce8e05ed7fe581fe870425de85817802cab1f7))
+
 ## [0.2.0](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.1.0...neoroute-ts/0.2.0) (2026-07-14)
 
 
