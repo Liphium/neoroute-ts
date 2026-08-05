@@ -40,5 +40,9 @@ jobs:
             - run: pnpm ci
               if: ${{ steps.release.outputs.release_created }}
 
+            - name: Build package
+              run: pnpm build
+              if: ${{ steps.release.outputs.release_created }}
+
             - run: pnpm publish
               if: ${{ steps.release.outputs.release_created }}

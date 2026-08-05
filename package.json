@@ -19,10 +19,15 @@
 		}
 	},
 	"description": "Connect to Neoroute servers using WebSocket or HTTP.",
+	"files": [
+		"dist",
+		"src"
+	],
 	"main": "dist/index.js",
 	"types": "dist/index.d.ts",
 	"scripts": {
 		"build": "tsc",
+		"prepublishOnly": "pnpm build",
 		"format": "prettier --write .",
 		"check": "prettier --check ."
 	},
