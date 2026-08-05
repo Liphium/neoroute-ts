@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.2](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.1...neoroute-ts/0.2.2) (2026-08-05)
+
+
+### Bug Fixes
+
+* Fix not building in CI ([0a30a8f](https://github.com/Liphium/neoroute-ts/commit/0a30a8f6c816c5ca11008b65bd81e912dd4f4f5a))
+
 ## [0.2.1](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.0...neoroute-ts/0.2.1) (2026-07-23)
 
 
