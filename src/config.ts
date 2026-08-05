@@ -1,4 +1,4 @@
 export interface Config {
-	errorHandler: (error: Error) => void;
+	errorHandler: (error: Error) => string;
 	requestTimeout?: number;
 }

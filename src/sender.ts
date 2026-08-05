@@ -90,11 +90,22 @@ export class Sender {
 		route: string,
 		reqData: Uint8Array,
 		wantResponse: boolean,
-	): Promise<{ promise: Promise<Response>; reqId: number }> {
+	): Promise<{
+		promise: Promise<Response>;
+		reqId: number;
+		immediateError?: UserError;
+	}> {
 		const reqId = this.getRequestId();
 
 		if (!this.sendFunc) {
-			throw new Error('sendFunc is not set');
+			const msg = this.config.errorHandler(
+				new Error('sendFunc is not set'),
+			);
+			return {
+				promise: Promise.resolve({} as Response),
+				reqId: -1,
+				immediateError: new UserError(msg),
+			};
 		}
 
 		const req: Request = {
@@ -107,7 +118,14 @@ export class Sender {
 		try {
 			reqBytes = encode(req);
 		} catch (err) {
-			throw new Error(`failed to marshal request: ${err}`);
+			const msg = this.config.errorHandler(
+				new Error(`failed to marshal request: ${err}`),
+			);
+			return {
+				promise: Promise.resolve({} as Response),
+				reqId: -1,
+				immediateError: new UserError(msg),
+			};
 		}
 
 		let respPromise: Promise<Response> = Promise.resolve({} as Response);
@@ -117,7 +135,18 @@ export class Sender {
 			});
 		}
 
-		await this.sendFunc(reqBytes);
+		try {
+			await this.sendFunc(reqBytes);
+		} catch (err) {
+			const msg = this.config.errorHandler(
+				err instanceof Error ? err : new Error(String(err)),
+			);
+			return {
+				promise: respPromise,
+				reqId: reqId,
+				immediateError: new UserError(msg),
+			};
+		}
 		return { promise: respPromise, reqId: reqId };
 	}
 
@@ -132,11 +161,20 @@ export class Sender {
 		waitForResponse: boolean,
 		hasResponse: boolean,
 	): Promise<RS | UserError | undefined> {
-		const { promise: respPromise, reqId } = await this.sendRequest(
+		const {
+			promise: respPromise,
+			reqId,
+			immediateError,
+		} = await this.sendRequest(
 			route,
 			req != undefined ? marshalRequestData<RQ>(req) : new Uint8Array(),
 			true,
 		);
+
+		if (immediateError) {
+			if (reqId !== -1) this.removeResponseWaiter(reqId);
+			return immediateError;
+		}
 
 		// When we want to wait for response, properly serialize it
 		if (waitForResponse) {
