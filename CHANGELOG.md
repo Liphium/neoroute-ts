@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.3](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.2...neoroute-ts/0.2.3) (2026-08-05)
+
+
+### Bug Fixes
+
+* Do not compile examples ([e736c3b](https://github.com/Liphium/neoroute-ts/commit/e736c3b6433e22ccaa1cb0dca6a90e3ae42698d7))
+
 ## [0.2.2](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.1...neoroute-ts/0.2.2) (2026-08-05)
 
 
