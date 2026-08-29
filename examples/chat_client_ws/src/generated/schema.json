@@ -1,0 +1,73 @@
+{
+	"version": 1,
+	"generator": "neogen",
+	"transporters": {
+		"ws": {
+			"type": "web_socket",
+			"events": {
+				"message": {
+					"type": "reference",
+					"objects": {
+						"MessageEvent": {
+							"type": "struct",
+							"name": "MessageEvent",
+							"fields": [
+								{
+									"Name": "text",
+									"Type": {
+										"type": "string"
+									}
+								},
+								{
+									"Name": "sender",
+									"Type": {
+										"type": "string"
+									}
+								},
+								{
+									"Name": "timestamp",
+									"Type": {
+										"type": "int64"
+									}
+								}
+							]
+						}
+					},
+					"object": "MessageEvent"
+				}
+			},
+			"routes": {
+				"send": {
+					"has_request": true,
+					"request": {
+						"type": "reference",
+						"objects": {
+							"SendRequest": {
+								"type": "struct",
+								"name": "SendRequest",
+								"fields": [
+									{
+										"Name": "text",
+										"Type": {
+											"type": "string"
+										}
+									},
+									{
+										"Name": "sender",
+										"Type": {
+											"type": "string"
+										}
+									}
+								]
+							}
+						},
+						"object": "SendRequest"
+					},
+					"has_response": false,
+					"can_return_error": true,
+					"response": null
+				}
+			}
+		}
+	}
+}

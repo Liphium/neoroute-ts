@@ -1,11 +1,12 @@
 {
-	"name": "http_example",
+	"name": "chat_client_example",
 	"version": "0.1.0",
 	"type": "module",
-	"description": "How to use the HTTP client from neoroute-ts",
+	"description": "How to use the WebSocket client from neoroute-ts with the chat server example",
 	"main": "index.ts",
 	"scripts": {
-		"start": "tsx src/main.ts"
+		"start": "tsx src/main.ts",
+		"generate": "cd src/generated && neogen -target typescript -command 'cat schema.json' -path ."
 	},
 	"dependencies": {
 		"@liphium/neoroute-ts": "workspace:*"

@@ -25,7 +25,7 @@ importers:
         specifier: ^6.0.3
         version: 6.0.3
 
-  examples/http_client:
+  examples/chat_client_http:
     dependencies:
       '@liphium/neoroute-ts':
         specifier: workspace:*
@@ -38,7 +38,7 @@ importers:
         specifier: ^4.23.12
         version: 4.23.12
 
-  examples/web_socket_client:
+  examples/chat_client_ws:
     dependencies:
       '@liphium/neoroute-ts':
         specifier: workspace:*
@@ -47,6 +47,9 @@ importers:
       '@types/node':
         specifier: ^26.0.1
         version: 26.0.1
+      tsx:
+        specifier: ^4.23.12
+        version: 4.23.12
 
 packages:
 
