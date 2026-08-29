@@ -1,7 +1,7 @@
-import { Receiver, UserError } from '@liphium/neoroute-ts';
+import { Client, UserError } from '@liphium/neoroute-ts';
 import { type TestRequest, type TestResponse } from './messages.js';
 
-export async function testHttpSimple(receiver: Receiver): Promise<void> {
+export async function testHttpSimple(receiver: Client): Promise<void> {
 	try {
 		console.log('Sending simple HTTP request...');
 		const resp = receiver.sendNoRequest<TestResponse>('simple.route');
@@ -16,7 +16,7 @@ export async function testHttpSimple(receiver: Receiver): Promise<void> {
 }
 
 export async function testHttpGroup1(
-	receiver: Receiver,
+	receiver: Client,
 	numberValue: number,
 ): Promise<void> {
 	try {
@@ -40,7 +40,7 @@ export async function testHttpGroup1(
 }
 
 export async function testHttpGroup2(
-	receiver: Receiver,
+	receiver: Client,
 	numberValue: number,
 ): Promise<void> {
 	try {

@@ -5,13 +5,14 @@
 	"description": "How to use the HTTP client from neoroute-ts",
 	"main": "index.ts",
 	"scripts": {
-		"start": "node --loader ts-node/esm src/main.ts"
+		"start": "tsx src/main.ts"
 	},
 	"dependencies": {
 		"@liphium/neoroute-ts": "workspace:*"
 	},
 	"devDependencies": {
-		"@types/node": "^26.0.1"
+		"@types/node": "^26.0.1",
+		"tsx": "^4.23.12"
 	},
 	"keywords": [],
 	"author": "",

@@ -1,21 +1,19 @@
-import { Receiver, HTTPTransporter } from '@liphium/neoroute-ts';
+import { Client, applyHTTP } from '@liphium/neoroute-ts';
 import { testHttpSimple, testHttpGroup1, testHttpGroup2 } from './requests.js';
 import readline from 'node:readline';
 
 async function main() {
 	// 1. Setup Receiver
-	const httpReceiver = new Receiver({
-		errorHandler: (err: Error) =>
-			console.log('Global HTTP receiver error:', err),
+	const client = new Client({
+		errorHandler: (err: Error) => {
+			console.log('Global HTTP receiver error:', err);
+			return 'Something went wrong!';
+		},
 		requestTimeout: 5000,
 	});
 
 	// 2. Setup HTTP Transporter with the required auth token
-	const httpTransporter = new HTTPTransporter(
-		httpReceiver,
-		'POST',
-		'http://localhost:6121/?token=secret_token',
-	);
+	applyHTTP(client, 'POST', 'http://localhost:6121/?token=secret_token');
 	console.log('HTTP Transporter initialized and ready.');
 
 	// 3. Setup console interface
@@ -37,11 +35,11 @@ async function main() {
 		const input = line.trim();
 
 		if (input === '1') {
-			testHttpSimple(httpReceiver).then(() => rl.prompt());
+			testHttpSimple(client).then(() => rl.prompt());
 		} else if (input === '2') {
-			testHttpGroup1(httpReceiver, 10).then(() => rl.prompt());
+			testHttpGroup1(client, 10).then(() => rl.prompt());
 		} else if (input === '3') {
-			testHttpGroup2(httpReceiver, 42).then(() => rl.prompt());
+			testHttpGroup2(client, 42).then(() => rl.prompt());
 		} else if (input === 'exit') {
 			rl.close();
 		} else {
