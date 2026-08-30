@@ -1,0 +1,42 @@
+{
+	"version": 1,
+	"generator": "neogen",
+	"transporters": {
+		"http": {
+			"type": "http",
+			"events": {},
+			"routes": {
+				"send": {
+					"has_request": true,
+					"request": {
+						"type": "reference",
+						"objects": {
+							"SendRequest": {
+								"type": "struct",
+								"name": "SendRequest",
+								"fields": [
+									{
+										"Name": "text",
+										"Type": {
+											"type": "string"
+										}
+									},
+									{
+										"Name": "sender",
+										"Type": {
+											"type": "string"
+										}
+									}
+								]
+							}
+						},
+						"object": "SendRequest"
+					},
+					"has_response": false,
+					"can_return_error": true,
+					"response": null
+				}
+			}
+		}
+	}
+}

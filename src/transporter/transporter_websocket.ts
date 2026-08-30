@@ -1,5 +1,5 @@
+import type { Client } from '../client.js';
 import { logger } from '../logger.js';
-import type { Receiver } from '../receiver.js';
 
 export interface WebSocketOptions {
 	// Timeout for the initial connection attempt, default is 20 seconds.
@@ -11,13 +11,13 @@ export interface WebSocketOptions {
 
 export class WebSocketTransporter {
 	private conn: WebSocket | null = null;
-	private receiver: Receiver;
+	protected client: Client;
 	private options: WebSocketOptions;
 	private connected: boolean = false;
 	private queue: Uint8Array[] = [];
 
-	constructor(receiver: Receiver, options: WebSocketOptions) {
-		this.receiver = receiver;
+	constructor(client: Client, options: WebSocketOptions) {
+		this.client = client;
 		this.options = options;
 	}
 
@@ -30,7 +30,7 @@ export class WebSocketTransporter {
 		}
 
 		// Queue outgoing messages until connection is open
-		this.receiver.setSendFunc(async (data: Uint8Array): Promise<void> => {
+		this.client.setSendFunc(async (data: Uint8Array): Promise<void> => {
 			if (this.connected && this.conn?.readyState === WebSocket.OPEN) {
 				this.conn.send(data as any); // TODO: Find out if this is actually fine xd
 			} else {
@@ -86,7 +86,7 @@ export class WebSocketTransporter {
 		// Forward messages to the receiver
 		this.conn.onmessage = (event) => {
 			if (event.data instanceof ArrayBuffer) {
-				this.receiver.handle(new Uint8Array(event.data));
+				this.client.handle(new Uint8Array(event.data));
 			} else {
 				// If we get this, the browser is doing something weird
 				logger.error('wrong message type received:', typeof event.data);
@@ -105,7 +105,7 @@ export class WebSocketTransporter {
 			c.close(1000, reason);
 		}
 		if (wasConnected) {
-			this.receiver.getConfig().errorHandler(new Error(reason));
+			this.client.getConfig().errorHandler(new Error(reason));
 		}
 	}
 
