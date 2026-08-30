@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.3.0](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.3...neoroute-ts/0.3.0) (2026-08-30)
+
+
+### ⚠ BREAKING CHANGES
+
+* Changes for 1.0
+
+### Features
+
+* Changes for 1.0 ([b0bb84d](https://github.com/Liphium/neoroute-ts/commit/b0bb84de82a2b9ec1551ace7bc254dfbbee687fb))
+
 ## [0.2.3](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.2...neoroute-ts/0.2.3) (2026-08-05)
 
 
