@@ -8,10 +8,16 @@ You can look at the code to get an idea how the two SDKs differ, but there is ac
 
 To run the server, you need to have `go` installed. You can install it [here](https://go.dev/dl).
 
-Then you can run the server with the following commands:
+1. Clone the server repository:
 
 ```sh
-go run github.com/Liphium/neoroute/examples/chat_server@latest
+git clone https://github.com/Liphium/neoroute
+```
+
+2. In the cloned repository folder, run the following command:
+
+```sh
+cd examples/chat_server && go run .
 ```
 
 ### Running the example
