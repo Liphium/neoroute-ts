@@ -4,7 +4,8 @@
 	"type": "module",
 	"repository": {
 		"type": "git",
-		"directory": "https://github.com/Liphium/neoroute-ts.git"
+		"directory": "https://github.com/Liphium/neoroute-ts.git",
+		"url": "https://github.com/Liphium/neoroute-ts"
 	},
 	"homepage": "https://github.com/Liphium/neoroute-ts#readme",
 	"bugs": {
