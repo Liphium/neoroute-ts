@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.0](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/1.0.0...neoroute-ts/1.1.0) (2026-09-14)
+
+
+### Features
+
+* Add onClose to WebSocket transporter (otherwise not detectable) ([8fe6a96](https://github.com/Liphium/neoroute-ts/commit/8fe6a9642574cf0f2b63c13d4288d1c07056dcf0))
+
 ## [1.0.0](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/0.2.3...neoroute-ts/1.0.0) (2026-08-30)
 
 
