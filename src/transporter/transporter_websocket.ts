@@ -7,6 +7,9 @@ export interface WebSocketOptions {
 
 	// When the connection actually opens.
 	onOpen?: () => void;
+
+	// When the connection closes. This is called for both remote and locally initiated closes.
+	onClose?: (code: number, reason: string) => void;
 }
 
 export class WebSocketTransporter {
@@ -79,6 +82,7 @@ export class WebSocketTransporter {
 			if (this.conn) {
 				this.close(
 					`websocket connection closed: ${event.code} ${event.reason}`,
+					event.code,
 				);
 			}
 		};
@@ -96,15 +100,19 @@ export class WebSocketTransporter {
 	}
 
 	/// Closes the connection to the server. Will not throw if the connection is already closed.
-	public close(reason: string = 'Connection closed'): void {
+	public close(
+		reason: string = 'Connection closed',
+		code: number = 1000,
+	): void {
 		const wasConnected = this.connected || !!this.conn;
 		this.connected = false;
 		if (this.conn) {
 			const c = this.conn;
 			this.conn = null;
-			c.close(1000, reason);
+			c.close(code, reason);
 		}
 		if (wasConnected) {
+			this.options.onClose?.(code, reason);
 			this.client.getConfig().errorHandler(new Error(reason));
 		}
 	}
