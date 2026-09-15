@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.1.1](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/1.1.0...neoroute-ts/1.1.1) (2026-09-15)
+
+
+### Bug Fixes
+
+* OnClose now also executes when errors happen ([5cd39e3](https://github.com/Liphium/neoroute-ts/commit/5cd39e37ab32a2baa429b579eb9c7433e89fe40a))
+
 ## [1.1.0](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/1.0.0...neoroute-ts/1.1.0) (2026-09-14)
 
 
