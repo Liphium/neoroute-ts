@@ -85,6 +85,7 @@ export class WebSocketTransporter {
 					event.code,
 				);
 			}
+			this.options.onClose?.(event.code, event.reason);
 		};
 
 		// Forward messages to the receiver
@@ -112,7 +113,6 @@ export class WebSocketTransporter {
 			c.close(code, reason);
 		}
 		if (wasConnected) {
-			this.options.onClose?.(code, reason);
 			this.client.getConfig().errorHandler(new Error(reason));
 		}
 	}
