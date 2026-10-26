@@ -30,11 +30,14 @@
 		"build": "tsc",
 		"prepublishOnly": "pnpm build",
 		"format": "prettier --write .",
-		"check": "prettier --check ."
+		"check": "prettier --check .",
+		"test": "pnpm build && tsc -p tests && node --test tests/*.test.mjs",
+		"test:chat": "pnpm build && tsc -p tests && pnpm --dir examples/chat_client_ws exec tsx ../../tests/chat.integration.ts",
+		"test:examples": "tsc -p examples/chat_client_http --noEmit && tsc -p examples/chat_client_ws --noEmit"
 	},
 	"keywords": [],
 	"author": "",
-	"license": "LGPL-3.0-only",
+	"license": "Apache-2.0",
 	"packageManager": "pnpm@12.4.1",
 	"devDependencies": {
 		"@types/node": "^26.0.1",

@@ -1,0 +1,108 @@
+name: Test
+
+on:
+    push:
+    pull_request:
+    workflow_dispatch:
+    schedule:
+        - cron: '0 6 * * *'
+
+permissions:
+    contents: read
+
+concurrency:
+    group: test-${{ github.workflow }}-${{ github.ref }}
+    cancel-in-progress: true
+
+jobs:
+    unit:
+        name: Build, type-check and regression tests
+        runs-on: ubuntu-latest
+        timeout-minutes: 10
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v6.0.9
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+            - run: pnpm test
+            - run: pnpm test:examples
+
+    compatibility:
+        name: Chat compatibility with latest Neoroute release
+        runs-on: ubuntu-latest
+        timeout-minutes: 15
+        steps:
+            - uses: actions/checkout@v4
+            - uses: pnpm/action-setup@v6.0.9
+            - uses: actions/setup-node@v4
+              with:
+                  node-version: 24
+                  cache: pnpm
+            - run: pnpm install --frozen-lockfile
+
+            - name: Find latest published Neoroute release
+              id: neoroute
+              env:
+                  GH_TOKEN: ${{ github.token }}
+              run: |
+                  tag=$(gh api repos/Liphium/neoroute/releases/latest --jq .tag_name)
+                  echo "tag=$tag" >> "$GITHUB_OUTPUT"
+                  echo "Testing Neoroute release: $tag"
+                  echo "Neoroute release: $tag" >> "$GITHUB_STEP_SUMMARY"
+
+            # Checkout the whole release so the example's relative Go module
+            # replacements use the server and transporters from the same tag.
+            - uses: actions/checkout@v4
+              with:
+                  repository: Liphium/neoroute
+                  ref: ${{ steps.neoroute.outputs.tag }}
+                  path: .upstream/neoroute
+                  persist-credentials: false
+
+            - uses: actions/setup-go@v5
+              with:
+                  go-version-file: .upstream/neoroute/examples/chat_server/go.mod
+                  cache-dependency-path: .upstream/neoroute/**/go.sum
+
+            - name: Test and build released chat server
+              working-directory: .upstream/neoroute/examples/chat_server
+              run: |
+                  go test ./...
+                  go build -o "$RUNNER_TEMP/neoroute-chat-server" .
+
+            - name: Test HTTP and WebSocket examples against released server
+              timeout-minutes: 5
+              run: |
+                  "$RUNNER_TEMP/neoroute-chat-server" > "$RUNNER_TEMP/neoroute-chat-server.log" 2>&1 &
+                  server_pid=$!
+                  trap 'kill "$server_pid" 2>/dev/null || true; wait "$server_pid" 2>/dev/null || true' EXIT
+                  ready=false
+                  for attempt in {1..60}; do
+                      if ! kill -0 "$server_pid" 2>/dev/null; then
+                          cat "$RUNNER_TEMP/neoroute-chat-server.log"
+                          exit 1
+                      fi
+                      if curl --silent --output /dev/null --max-time 1 http://localhost:6121/http; then
+                          ready=true
+                          break
+                      fi
+                      sleep 1
+                  done
+                  if [ "$ready" != true ]; then
+                      echo 'Chat server did not become ready within 60 attempts'
+                      cat "$RUNNER_TEMP/neoroute-chat-server.log"
+                      exit 1
+                  fi
+                  pnpm test:chat
+
+            - name: Upload server log on failure
+              if: failure()
+              uses: actions/upload-artifact@v4
+              with:
+                  name: neoroute-chat-server-log
+                  path: ${{ runner.temp }}/neoroute-chat-server.log
+                  if-no-files-found: ignore
+                  retention-days: 7

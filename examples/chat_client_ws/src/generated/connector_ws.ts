@@ -2,6 +2,7 @@
 import {
 	Client,
 	type Config,
+	type RequestOptions,
 	WebSocketTransporter,
 	type WebSocketOptions,
 	UserError,
@@ -28,7 +29,10 @@ export class WsConnector extends WebSocketTransporter {
 		);
 	}
 
-	public async send(payload: SendRequest): Promise<UserError | void> {
-		return this.cl.sendOk<SendRequest>('send', payload);
+	public async send(
+		payload: SendRequest,
+		options?: RequestOptions,
+	): Promise<UserError | void> {
+		return this.cl.sendOk<SendRequest>('send', payload, options);
 	}
 }
