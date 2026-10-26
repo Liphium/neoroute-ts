@@ -50,8 +50,7 @@ export class Client {
 			if (!this.sendFunc) throw new Error('sendFunc is not set');
 			const body =
 				req !== undefined ? marshalRequestData(req) : new Uint8Array();
-			// The ordered tuple lets the server inspect the route and binary body
-			// length before reading the body and applying its route size limit.
+			// The ordered tuple lets the server inspect the route and binary body length before reading the body and applying its route size limit.
 			const request: Request = [reqId, route, body];
 			const bytes = encode(request);
 			let response: Promise<Response> | undefined;
