@@ -2,12 +2,12 @@ import { decode, encode } from '@msgpack/msgpack';
 import {
 	type Message,
 	type Response,
-	type Request,
 	MessageType,
 	type Event,
+	type Request,
 } from './interfaces.js';
 import { logger } from './logger.js';
-import type { Config } from './config.js';
+import type { Config, RequestOptions } from './config.js';
 import {
 	marshalRequestData,
 	unmarshalResponseData,
@@ -19,201 +19,145 @@ import { Ctx } from './context.js';
 export class Client {
 	private config: Config;
 	private sendFunc?: (data: Uint8Array) => Promise<void>;
-	private requestId: number = 0;
+	private requestId = 0;
 	private receiver: Map<string, (c: Ctx) => void> = new Map();
-
-	// Maps a request ID to a resolve function to fulfill the promise
 	private waiters: Map<number, (resp: Response) => void> = new Map();
 
 	constructor(config: Config) {
-		this.config = config;
-		if (!this.config.requestTimeout) {
-			this.config.requestTimeout = 5000; // default timeout 5 seconds
-		}
+		this.config = {
+			...config,
+			requestTimeout: config.requestTimeout ?? 5000,
+		};
 	}
 
 	public setSendFunc(sendFunc: (data: Uint8Array) => Promise<void>): void {
 		this.sendFunc = sendFunc;
 	}
 
-	private removeResponseWaiter(requestId: number): void {
-		this.waiters.delete(requestId);
-	}
-
-	private getRequestId(): number {
-		this.requestId++;
-		return this.requestId;
-	}
-
-	/// Internal helper for sending the actual request.
-	private async sendRequest(
-		route: string,
-		reqData: Uint8Array,
-		wantResponse: boolean,
-	): Promise<{
-		promise: Promise<Response>;
-		reqId: number;
-		immediateError?: UserError;
-	}> {
-		const reqId = this.getRequestId();
-
-		if (!this.sendFunc) {
-			const msg = this.config.errorHandler(
-				new Error('sendFunc is not set'),
-			);
-			return {
-				promise: Promise.resolve({} as Response),
-				reqId: -1,
-				immediateError: new UserError(msg),
-			};
-		}
-
-		const req: Request = {
-			id: reqId,
-			route: route,
-			data: reqData,
-		};
-
-		let reqBytes: Uint8Array;
-		try {
-			reqBytes = encode(req);
-		} catch (err) {
-			const msg = this.config.errorHandler(
-				new Error(`failed to marshal request: ${err}`),
-			);
-			return {
-				promise: Promise.resolve({} as Response),
-				reqId: -1,
-				immediateError: new UserError(msg),
-			};
-		}
-
-		let respPromise: Promise<Response> = Promise.resolve({} as Response);
-		if (wantResponse) {
-			respPromise = new Promise<Response>((resolve) => {
-				this.waiters.set(reqId, resolve);
-			});
-		}
-
-		try {
-			await this.sendFunc(reqBytes);
-		} catch (err) {
-			const msg = this.config.errorHandler(
-				err instanceof Error ? err : new Error(String(err)),
-			);
-			return {
-				promise: respPromise,
-				reqId: reqId,
-				immediateError: new UserError(msg),
-			};
-		}
-		return { promise: respPromise, reqId: reqId };
-	}
-
 	public getConfig(): Config {
 		return this.config;
 	}
 
-	/// Internal helper for making send functions easier to write and handling the timeout.
 	private async sendInternal<RQ, RS>(
 		route: string,
 		req: RQ,
 		waitForResponse: boolean,
 		hasResponse: boolean,
+		options?: RequestOptions,
 	): Promise<RS | UserError | undefined> {
-		const {
-			promise: respPromise,
-			reqId,
-			immediateError,
-		} = await this.sendRequest(
-			route,
-			req != undefined ? marshalRequestData<RQ>(req) : new Uint8Array(),
-			true,
-		);
-
-		if (immediateError) {
-			if (reqId !== -1) this.removeResponseWaiter(reqId);
-			return immediateError;
-		}
-
-		// When we want to wait for response, properly serialize it
-		if (waitForResponse) {
-			const timeout = this.config.requestTimeout ?? 5000;
-			const res = await withTimeout(respPromise, timeout);
-			this.removeResponseWaiter(reqId);
-
-			if (res.error) {
-				const decoder = new TextDecoder();
-				return new UserError(decoder.decode(res.data));
+		const reqId = ++this.requestId;
+		try {
+			if (!this.sendFunc) throw new Error('sendFunc is not set');
+			const body =
+				req !== undefined ? marshalRequestData(req) : new Uint8Array();
+			// The ordered tuple lets the server inspect the route and binary body length before reading the body and applying its route size limit.
+			const request: Request = [reqId, route, body];
+			const bytes = encode(request);
+			let response: Promise<Response> | undefined;
+			if (waitForResponse) {
+				response = new Promise<Response>((resolve) =>
+					this.waiters.set(reqId, resolve),
+				);
 			}
-
-			if (hasResponse) {
-				return unmarshalResponseData<RS>(res.data);
-			} else {
-				return undefined;
-			}
-		} else {
-			// Otherwise signal that nothing will be waited for
-			return undefined;
+			const send = this.sendFunc;
+			const operation = async () => {
+				await send(bytes);
+				if (!response) return undefined;
+				const res = await response;
+				if (res.error)
+					return new UserError(new TextDecoder().decode(res.data));
+				return hasResponse
+					? unmarshalResponseData<RS>(res.data)
+					: undefined;
+			};
+			return await withTimeout(
+				operation(),
+				options?.requestTimeout ?? this.config.requestTimeout ?? 5000,
+			);
+		} catch (error) {
+			return new UserError(
+				this.config.errorHandler(
+					error instanceof Error ? error : new Error(String(error)),
+				),
+			);
+		} finally {
+			this.waiters.delete(reqId);
 		}
 	}
 
-	/// Send a request to the server, gets a response or UserError back.
-	///
-	/// This function can not throw any errors.
-	public send<RS, RQ>(route: string, req: RQ): Promise<RS | UserError> {
-		return this.sendInternal<RQ, RS>(route, req, true, true) as Promise<
-			RS | UserError
-		>;
-	}
-
-	/// Send a request to the server, gets a UserError back in case there is one.
-	///
-	/// This function can not throw any errors.
-	public sendOk<RQ>(route: string, req: RQ): Promise<UserError | undefined> {
-		return this.sendInternal<RQ, unknown>(
+	/// Send a request and return its response or a UserError. Does not throw.
+	public send<RS, RQ>(
+		route: string,
+		req: RQ,
+		options?: RequestOptions,
+	): Promise<RS | UserError> {
+		return this.sendInternal<RQ, RS>(
 			route,
 			req,
 			true,
-			false,
-		) as Promise<UserError | undefined>;
+			true,
+			options,
+		) as Promise<RS | UserError>;
 	}
 
-	/// Send a request with no request data to the server, gets a UserError back in case there is one.
-	///
-	/// This function can not throw any errors.
-	public async sendOkNoRequest(
+	/// Send a request and wait for success or a UserError. Does not throw.
+	public sendOk<RQ>(
 		route: string,
+		req: RQ,
+		options?: RequestOptions,
 	): Promise<UserError | undefined> {
-		return this.sendInternal(route, undefined, false, false) as Promise<
-			UserError | undefined
-		>;
+		return this.sendInternal<RQ, never>(route, req, true, false, options);
 	}
 
-	/// Send a request with no request data to the server, gets a response or UserError back.
-	///
-	/// This function can not throw any errors.
-	public async sendNoRequest<RS>(route: string): Promise<RS | UserError> {
+	/// Send without request data and wait for success or a UserError. Does not throw.
+	public sendOkNoRequest(
+		route: string,
+		options?: RequestOptions,
+	): Promise<UserError | undefined> {
+		return this.sendInternal<undefined, never>(
+			route,
+			undefined,
+			true,
+			false,
+			options,
+		);
+	}
+
+	/// Send without request data and return its response or a UserError. Does not throw.
+	public sendNoRequest<RS>(
+		route: string,
+		options?: RequestOptions,
+	): Promise<RS | UserError> {
 		return this.sendInternal<undefined, RS>(
 			route,
 			undefined,
 			true,
 			true,
+			options,
 		) as Promise<RS | UserError>;
 	}
 
-	/// Send a request with no response to the server.
-	///
-	/// This function can not throw any errors.
-	public async sendNoResponse<RQ>(route: string, req: RQ): Promise<void> {
-		await this.sendInternal<RQ, undefined>(route, req, false, false);
+	/// Send without waiting for a response. Errors go to the configured error handler.
+	public async sendNoResponse<RQ>(
+		route: string,
+		req: RQ,
+		options?: RequestOptions,
+	): Promise<void> {
+		await this.sendInternal<RQ, never>(route, req, false, false, options);
 	}
 
-	/// Send a ping to the server. This is useful for keeping the connection alive.
-	///
-	/// This function can not throw any errors.
-	public async sendPing(route: string): Promise<void> {
-		await this.sendInternal(route, undefined, false, false);
+	/// Send without request data or waiting for a response.
+	public async sendPing(
+		route: string,
+		options?: RequestOptions,
+	): Promise<void> {
+		await this.sendInternal<undefined, never>(
+			route,
+			undefined,
+			false,
+			false,
+			options,
+		);
 	}
 
 	/// INTERNAL: handles data received from the transport layer. This is called by the transport layer when data is received.

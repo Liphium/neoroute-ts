@@ -24,8 +24,5 @@ export interface Response {
 
 // Outgoing messages
 
-export interface Request {
-	id: number;
-	route: string;
-	data: Uint8Array;
-}
+// Requests use an ordered tuple; incoming messages continue to use maps.
+export type Request = [id: number, route: string, data: Uint8Array];

@@ -32,3 +32,9 @@ This repository contains two interactive command-line examples to test this libr
 We verified that the browser and NodeJS both work without problems in our tests. The only dependency we have is [MessagePack](https://github.com/msgpack/msgpack-javascript), the encoding we use instead of JSON.
 
 Other than that, we use the native Browser APIs like `fetch` and `WebSocket`. For this reason, there should not be any issues. If you still find an environment that has problems or there is something wrong with our SDK, please kindly let us know on [GitHub](https://github.com/Liphium/neoroute-ts/issues).
+
+## Development
+
+Run `pnpm test` for the build and client regression tests.
+
+To test the generated HTTP and WebSocket example connectors against the current Go chat server, run `go run .` in `github.com/Liphium/neoroute/examples/chat_server` (you need to clone the repository first), then `pnpm test:chat` here.
