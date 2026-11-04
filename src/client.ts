@@ -47,33 +47,50 @@ export class Client {
 	): Promise<RS | UserError | undefined> {
 		const reqId = ++this.requestId;
 		try {
-			if (!this.sendFunc) throw new Error('sendFunc is not set');
-			const body =
-				req !== undefined ? marshalRequestData(req) : new Uint8Array();
+			if (!this.sendFunc) {
+				throw new Error('sendFunc is not set');
+			}
+
+			let body: Uint8Array = new Uint8Array();
+			if (req !== undefined) {
+				body = marshalRequestData(req);
+			}
 			// The ordered tuple lets the server inspect the route and binary body length before reading the body and applying its route size limit.
 			const request: Request = [reqId, route, body];
 			const bytes = encode(request);
-			let response: Promise<Response> | undefined;
+
+			// Register before sending so an immediate response can find its waiter.
+			let responsePromise: Promise<Response> | undefined;
 			if (waitForResponse) {
-				response = new Promise<Response>((resolve) =>
-					this.waiters.set(reqId, resolve),
-				);
+				responsePromise = new Promise<Response>((resolve) => {
+					this.waiters.set(reqId, resolve);
+				});
 			}
+
 			const send = this.sendFunc;
-			const operation = async () => {
+			const sendAndReadResponse = async () => {
 				await send(bytes);
-				if (!response) return undefined;
-				const res = await response;
-				if (res.error)
-					return new UserError(new TextDecoder().decode(res.data));
-				return hasResponse
-					? unmarshalResponseData<RS>(res.data)
-					: undefined;
+				if (!responsePromise) {
+					return undefined;
+				}
+
+				const [, , error, data] = await responsePromise;
+				if (error) {
+					const message = new TextDecoder().decode(data);
+					return new UserError(message);
+				}
+
+				// Success-only requests need the acknowledgement, but no decoded body.
+				if (!hasResponse) {
+					return undefined;
+				}
+				return unmarshalResponseData<RS>(data);
 			};
-			return await withTimeout(
-				operation(),
-				options?.requestTimeout ?? this.config.requestTimeout ?? 5000,
-			);
+
+			// The timeout covers both sending and waiting for the response.
+			const timeout =
+				options?.requestTimeout ?? this.config.requestTimeout ?? 5000;
+			return await withTimeout(sendAndReadResponse(), timeout);
 		} catch (error) {
 			return new UserError(
 				this.config.errorHandler(
@@ -170,10 +187,12 @@ export class Client {
 			return;
 		}
 
-		if (message.type === MessageType.Response) {
-			this.handleResponse(message.data);
-		} else if (message.type === MessageType.Event) {
-			this.handleEvent(message.data);
+		const [type, data] = message;
+
+		if (type === MessageType.Response) {
+			this.handleResponse(data);
+		} else if (type === MessageType.Event) {
+			this.handleEvent(data);
 		} else {
 			this.handleOther(message);
 		}
@@ -189,15 +208,17 @@ export class Client {
 			return;
 		}
 
-		if (resp.id === -1 && resp.error) {
+		const [id, , error, data] = resp;
+
+		if (id === -1 && error) {
 			const decoder = new TextDecoder();
-			this.config.errorHandler(new Error(decoder.decode(resp.data)));
+			this.config.errorHandler(new Error(decoder.decode(data)));
 			return;
 		}
 
-		const resolveFunc = this.waiters.get(resp.id);
+		const resolveFunc = this.waiters.get(id);
 		if (!resolveFunc) {
-			logger.info('received response for non existing waiter', resp.id);
+			logger.info('received response for non existing waiter', id);
 			return;
 		}
 
@@ -214,13 +235,15 @@ export class Client {
 			return;
 		}
 
-		const receiverFunc = this.receiver.get(ev.name);
+		const [name, data] = ev;
+
+		const receiverFunc = this.receiver.get(name);
 		if (!receiverFunc) {
-			logger.info('received event for non existing receiver', ev.name);
+			logger.info('received event for non existing receiver', name);
 			return;
 		}
 
-		const c = new Ctx(ev.data, ev.name);
+		const c = new Ctx(data, name);
 		receiverFunc(c);
 	}
 
@@ -240,6 +263,7 @@ export class Client {
 	}
 
 	protected handleOther(message: Message): void {
-		logger.info('received unsupported message type', message.type);
+		const [type] = message;
+		logger.info('received unsupported message type', type);
 	}
 }

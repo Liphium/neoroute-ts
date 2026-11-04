@@ -1,6 +1,27 @@
 {
-	"version": 1,
+	"version": 2,
 	"generator": "neogen",
+	"custom_objects": {
+		"SomeStruct": {
+			"type": "reference",
+			"objects": {
+				"SomeStruct": {
+					"type": "struct",
+					"name": "SomeStruct",
+					"fields": [
+						{
+							"Name": "hello",
+							"Type": {
+								"type": "string"
+							}
+						}
+					],
+					"tuple": false
+				}
+			},
+			"object": "SomeStruct"
+		}
+	},
 	"transporters": {
 		"http": {
 			"type": "http",
@@ -27,7 +48,8 @@
 											"type": "string"
 										}
 									}
-								]
+								],
+								"tuple": false
 							}
 						},
 						"object": "SendRequest"

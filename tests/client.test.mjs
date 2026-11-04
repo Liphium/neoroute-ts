@@ -5,15 +5,15 @@ import { Client, UserError } from '../dist/index.js';
 
 const reply = (client, id, data, error = false) =>
 	client.handle(
-		encode({
-			type: 0,
-			data: encode({
+		encode([
+			0,
+			encode([
 				id,
-				has_data: true,
+				true,
 				error,
-				data: error ? new TextEncoder().encode(data) : encode(data),
-			}),
-		}),
+				error ? new TextEncoder().encode(data) : encode(data),
+			]),
+		]),
 	);
 
 test('all six send functions use ordered tuples and binary bodies', async () => {
@@ -90,11 +90,7 @@ test('serialization, transport and decoding failures return UserError and clear 
 	assert.ok((await client.sendOk('x', cyclic)) instanceof UserError);
 	client.setSendFunc(async (bytes) =>
 		client.handleResponse(
-			encode({
-				id: decode(bytes)[0],
-				error: false,
-				data: new Uint8Array(),
-			}),
+			encode([decode(bytes)[0], true, false, new Uint8Array()]),
 		),
 	);
 	assert.ok((await client.send('x', {})) instanceof UserError);
