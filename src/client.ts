@@ -183,7 +183,9 @@ export class Client {
 		try {
 			message = decode(reqData) as Message;
 		} catch (error) {
-			logger.info('failed to unmarshal message', error);
+			this.config.errorHandler(
+				new Error(`failed to unmarshal message: ${error}`),
+			);
 			return;
 		}
 
@@ -204,7 +206,9 @@ export class Client {
 		try {
 			resp = decode(respBytes) as Response;
 		} catch (error) {
-			logger.info('failed to unmarshal response', error);
+			this.config.errorHandler(
+				new Error(`failed to unmarshal response: ${error}`),
+			);
 			return;
 		}
 
@@ -231,7 +235,9 @@ export class Client {
 		try {
 			ev = decode(eventBytes) as Event;
 		} catch (error) {
-			logger.info('failed to unmarshal event', error);
+			this.config.errorHandler(
+				new Error(`failed to unmarshal event: ${error}`),
+			);
 			return;
 		}
 
@@ -257,13 +263,17 @@ export class Client {
 				const data = decode(c.data()) as E;
 				handleFunc(c, data);
 			} catch (error) {
-				logger.info('failed to unmarshal event data', error);
+				this.config.errorHandler(
+					new Error(`failed to unmarshal event data: ${error}`),
+				);
 			}
 		});
 	}
 
 	protected handleOther(message: Message): void {
 		const [type] = message;
-		logger.info('received unsupported message type', type);
+		this.config.errorHandler(
+			new Error(`received unsupported message type: ${type}`),
+		);
 	}
 }

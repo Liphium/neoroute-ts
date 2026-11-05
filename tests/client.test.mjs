@@ -129,3 +129,57 @@ test('no-response methods honor send timeouts without registering response waite
 	assert.ok(errors.every((e) => /timed out after 5ms/.test(e)));
 	assert.equal(client.waiters.size, 0);
 });
+
+test('decoding and unsupported-message errors reach the central handler', () => {
+	const errors = [];
+	const client = new Client({
+		errorHandler: (error) => {
+			errors.push(error);
+			return error.message;
+		},
+	});
+	const invalid = new Uint8Array([0xc1]);
+	client.handle(invalid);
+	client.handleResponse(invalid);
+	client.handle(encode([1, invalid]));
+	client.receive('test', () => assert.fail('invalid event was delivered'));
+	client.handle(encode([1, encode(['test', invalid])]));
+	client.handle(encode([99, new Uint8Array()]));
+	assert.equal(errors.length, 5);
+	assert.ok(errors.every((error) => error instanceof Error));
+});
+
+test('invalid WebSocket URLs reach the central handler without throwing', async () => {
+	const { WebSocketTransporter } = await import('../dist/index.js');
+	const errors = [];
+	const client = new Client({
+		errorHandler: (error) => {
+			errors.push(error);
+			return error.message;
+		},
+	});
+	const transporter = new WebSocketTransporter(client, {});
+	assert.doesNotThrow(() => transporter.connect('http://['));
+	assert.equal(errors.length, 1);
+	assert.ok(errors[0] instanceof Error);
+});
+
+test('WebSocket close failures reach the central handler', async () => {
+	const { WebSocketTransporter } = await import('../dist/index.js');
+	const errors = [];
+	const client = new Client({
+		errorHandler: (error) => {
+			errors.push(error);
+			return error.message;
+		},
+	});
+	const transporter = new WebSocketTransporter(client, {});
+	const failure = new Error('close failed');
+	transporter.conn = {
+		close() {
+			throw failure;
+		},
+	};
+	assert.doesNotThrow(() => transporter.close());
+	assert.deepEqual(errors, [failure]);
+});
