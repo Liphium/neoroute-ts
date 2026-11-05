@@ -103,7 +103,7 @@ export class Client {
 	}
 
 	/// Send a request and return its response or a UserError. Does not throw.
-	public send<RS, RQ>(
+	public send<RQ, RS>(
 		route: string,
 		req: RQ,
 		options?: RequestOptions,
