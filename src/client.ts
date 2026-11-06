@@ -1,4 +1,5 @@
-import { decode, encode } from '@msgpack/msgpack';
+import { encode } from '@msgpack/msgpack';
+import { decode } from './codec.js';
 import {
 	type Message,
 	type Response,
