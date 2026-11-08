@@ -2,10 +2,9 @@ name: Test
 
 on:
     push:
+        branches:
+            - main
     pull_request:
-    workflow_dispatch:
-    schedule:
-        - cron: '0 6 * * *'
 
 permissions:
     contents: read
@@ -48,7 +47,14 @@ jobs:
               env:
                   GH_TOKEN: ${{ github.token }}
               run: |
-                  tag=$(gh api repos/Liphium/neoroute/releases/latest --jq .tag_name)
+                  # Include prereleases, but exclude SDK and other submodule tags.
+                  # Select the latest root release by publication time across all pages.
+                  tag=$(gh api --paginate --slurp repos/Liphium/neoroute/releases \
+                      --jq '[.[][] | select(.draft == false and (.tag_name | test("^v[0-9]+[.][0-9]+[.][0-9]+(-[0-9A-Za-z.-]+)?([+][0-9A-Za-z.-]+)?$")))] | max_by(.published_at) | .tag_name // empty')
+                  if [ -z "$tag" ]; then
+                      echo 'No published Neoroute releases found' >&2
+                      exit 1
+                  fi
                   echo "tag=$tag" >> "$GITHUB_OUTPUT"
                   echo "Testing Neoroute release: $tag"
                   echo "Neoroute release: $tag" >> "$GITHUB_STEP_SUMMARY"
