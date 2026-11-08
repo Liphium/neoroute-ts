@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.0.0](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/1.1.1...neoroute-ts/2.0.0) (2026-11-08)
+
+
+### ⚠ BREAKING CHANGES
+
+* Support new wire format with tuples
+
+### Features
+
+* Request options for more configuration ([6351fe7](https://github.com/Liphium/neoroute-ts/commit/6351fe743bd97bfc57c23937f7b2850307d5f773))
+* Support new wire format with tuples ([6351fe7](https://github.com/Liphium/neoroute-ts/commit/6351fe743bd97bfc57c23937f7b2850307d5f773))
+* support v2.0.0 ([#12](https://github.com/Liphium/neoroute-ts/issues/12)) ([6351fe7](https://github.com/Liphium/neoroute-ts/commit/6351fe743bd97bfc57c23937f7b2850307d5f773))
+
 ## [1.1.1](https://github.com/Liphium/neoroute-ts/compare/neoroute-ts/1.1.0...neoroute-ts/1.1.1) (2026-09-15)
 
 
