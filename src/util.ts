@@ -1,4 +1,5 @@
-import { decode, encode } from '@msgpack/msgpack';
+import { encode } from '@msgpack/msgpack';
+import { decode } from './codec.js';
 
 // Creates a promise that can be resolved or rejected externally. This is useful for creating a promise that can be resolved or rejected at a later time, such as when waiting for an event to occur.
 export function newPromiseWithResolver<T>(): {

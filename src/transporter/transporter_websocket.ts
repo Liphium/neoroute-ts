@@ -49,7 +49,17 @@ export class WebSocketTransporter {
 		}, this.options.connectionTimeout ?? 20000);
 
 		// Init WebSocket to open the actual connection
-		this.conn = new WebSocket(url);
+		try {
+			this.conn = new WebSocket(url);
+		} catch (error) {
+			clearTimeout(timeout);
+			this.client
+				.getConfig()
+				.errorHandler(
+					error instanceof Error ? error : new Error(String(error)),
+				);
+			return;
+		}
 		this.conn.binaryType = 'arraybuffer';
 
 		this.conn.onopen = () => {
@@ -65,7 +75,12 @@ export class WebSocketTransporter {
 			while (this.queue.length > 0) {
 				const data = this.queue.shift();
 				if (data) {
-					this.conn.send(data as any);
+					try {
+						this.conn.send(data as any);
+					} catch (error) {
+						this.close(`failed to send queued message: ${error}`);
+						return;
+					}
 				}
 			}
 		};
@@ -110,7 +125,18 @@ export class WebSocketTransporter {
 		if (this.conn) {
 			const c = this.conn;
 			this.conn = null;
-			c.close(code, reason);
+			try {
+				c.close(code, reason);
+			} catch (error) {
+				this.client
+					.getConfig()
+					.errorHandler(
+						error instanceof Error
+							? error
+							: new Error(String(error)),
+					);
+				return;
+			}
 		}
 		if (wasConnected) {
 			this.client.getConfig().errorHandler(new Error(reason));
